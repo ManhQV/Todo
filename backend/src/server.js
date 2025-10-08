@@ -4,23 +4,36 @@ import express from "express";
 import taskRoute from "./routes/taskRoutes.js";
 import { connectDB } from "./config/db.js";
 import cors from "cors";
-
+import path from "path";
 
 dotenv.config();
 
 const PORT = process.env.PORT || 5001;
+const __dirname = path.resolve();
 
 const app = express();
 
 // 👉 Đặt middleware parse body TRƯỚC routes
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors({origin: "http://localhost:5173"}));
+
+// CORS policy
+if(process.env.NODE_ENV !== "production") {
+  app.use(cors({origin: "http://localhost:5173"}));
+}
+
 
 // Routes
 app.use("/api/tasks", taskRoute);
 
 
+// Phục vụ tệp tĩnh trong môi trường production
+if(process.env.NODE_ENV === "production") {
+   app.use(express.static(path.join(__dirname, "../frontend/dist")));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../frontend/dist/index.html"));
+});
+}
 
 // Kết nối DB
 connectDB().then(() => {
